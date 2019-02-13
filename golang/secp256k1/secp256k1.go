@@ -213,15 +213,4 @@ func (s *Secp256k1) ScalarMult(k []byte) (*big.Int, *big.Int, *big.Int) {
 	}
 
 	return x, y, z
-
-	// Convert the jacobian back to the affine.
-	// xOut, yOut := secp256k1.affineFromJacobian(x, y, z)
-	// fmt.Printf("Public Key: xOut: %v, yOut: %v \n", xOut, yOut)
-
-	// Check that the output of x and y are valid points on the curve.
-	// valid := secp256k1.IsOnCurve(xOut, yOut)
-	// fmt.Printf("Is public key valid: %v\n", valid)
-	// if !valid {
-	// 	t.Fatalf("xOut: %v and yOut: %v are not valid for the curve", xOut, yOut)
-	// }
 }
