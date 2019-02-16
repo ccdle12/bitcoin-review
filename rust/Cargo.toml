@@ -1,0 +1,11 @@
+[package]
+name = "rust"
+version = "0.1.0"
+authors = ["ccdle12 <chris.coverdale24@gmail.com>"]
+
+[dependencies]
+# num-bigint = "0.2"
+num-integer = "0.1"
+num-traits = "0.1"
+ramp = "0.5.1"
+rand = "0.5"

@@ -12,7 +12,7 @@ const (
 	b = "0000000000000000000000000000000000000000000000000000000000000007" // Part of the equation for secp256k1. y^2 = x^3 + ax + b
 	// g = "0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8" // The publicly known base point (generator point).
 	gx = "79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798" // X co-ordinate of the base point (generator point)
-	gy = "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8" // X co-ordinate of the base point (generator point)
+	gy = "483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8" // Y co-ordinate of the base point (generator point)
 	n  = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141" // Number of points in the field of secp256k1.
 )
 
@@ -176,13 +176,13 @@ func (s *Secp256k1) IsOnCurve(x, y *big.Int) bool {
 	y2 := new(big.Int).Mul(y, y) // y^2
 	y2.Mod(y2, s.P)              // y^2 % P
 
-	x3 := new(big.Int).Mul(x, x) // x^2
-	x3.Mul(x3, x)                // x^3
+	x2 := new(big.Int).Mul(x, x) // x^2
+	x2.Mul(x2, x)                // x^3
 
-	x3.Add(x3, s.B) // x^3 + B
-	x3.Mod(x3, s.P) // (x^3 + B) % P
+	x2.Add(x2, s.B) // x^3 + B
+	x2.Mod(x2, s.P) // (x^3 + B) % P
 
-	return x3.Cmp(y2) == 0
+	return x2.Cmp(y2) == 0
 }
 
 // ScalarMult is the open function for scalar multiplication on a curve.
