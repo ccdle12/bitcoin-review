@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+func TestPrintConsts(t *testing.T) {
+	// Generate a curve.
+	secp256k1 := New()
+
+	fmt.Printf("%v\n", secp256k1.P)
+}
+
 // TestHexDecodeString will test that we can convert the P value of secp256k1
 // to bytes and then back into hex.
 func TestHexDecodeString(t *testing.T) {

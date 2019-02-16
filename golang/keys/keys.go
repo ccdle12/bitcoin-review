@@ -35,7 +35,7 @@ func New() (*Keys, error) {
 	return &Keys{secp256k1, privateKey, publicKey}, err
 }
 
-// PrivateKeys is the struct to hold Private Key information.
+// PrivateKey is the struct to hold Private Key information.
 type PrivateKey struct {
 	secret *big.Int
 }
@@ -71,4 +71,40 @@ func generatePublicKey(curve *secp256k1.Secp256k1, pk *PrivateKey) (*PublicKey, 
 	}
 
 	return &PublicKey{X: x, Y: y}, nil
+}
+
+// generateUncompressedSec will generate a formatted uncompressed public key.
+func generateUncompressedSec(pubKey *PublicKey) []byte {
+	// Convert big Ints to big endian bytes := secX, secY.
+	xBytes := pubKey.X.Bytes()
+	yBytes := pubKey.Y.Bytes()
+
+	// Created expected for uncompressed, prepend b'x04' to the (secX + secY).
+	sec := append(xBytes, yBytes...)
+	sec = append([]byte{0x04}, sec...)
+
+	return sec
+}
+
+// generateUncompressedSec will generate a formatted uncompressed public key.
+func generateCompressedSec(pubKey *PublicKey) []byte {
+	// Convert big Ints to big endian bytes := secX, secY.
+	xBytes := pubKey.X.Bytes()
+
+	// Determine whether to append the 0x02 (even) or odd 0x03 to the sec
+	// public key.
+	yMarker := pubKey.Y.Mod(pubKey.Y, big.NewInt(2))
+
+	// Declare the sec public key to be returned before prepending the byte
+	// marker.
+	var sec []byte
+
+	// If comparison returns 0, Y is even else Y is odd.
+	if yMarker.Cmp(big.NewInt(0)) == 0 {
+		sec = append([]byte{0x02}, xBytes...)
+	} else {
+		sec = append([]byte{0x03}, xBytes...)
+	}
+
+	return sec
 }
