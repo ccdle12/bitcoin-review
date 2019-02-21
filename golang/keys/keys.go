@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"github.com/ccdle12/bitcoin-review/golang/secp256k1"
+	"github.com/ccdle12/bitcoin-review/golang/utils"
 	"math/big"
 )
 
@@ -107,4 +108,36 @@ func generateCompressedSec(pubKey *PublicKey) []byte {
 	}
 
 	return sec
+}
+
+// GenerateTestnetAddress will generate a testnet compatible address given the
+// SEC. It will pass the prefix to the internal implementation.
+func GenerateTestnetAddress(sec []byte) string {
+	return genAddress([]byte{0x6f}, sec)
+}
+
+// GenerateMainnetAddress will generate a mainnet compatible address given the
+// SEC. It will pass the prefix to the internal implementation.
+func GenerateMainnetAddress(sec []byte) string {
+	return genAddress([]byte{0x00}, sec)
+}
+
+// genTestnet will take a byte prefix and a sec formatted public key and
+// generate a valid testnet address.
+func genAddress(prefix, sec []byte) string {
+	// SHA256 -> RIPEMD160
+	hashedSec := utils.Hash160(sec)
+
+	// Prepend the prefix to the hash of the sec public key.
+	raw := append(prefix, hashedSec...)
+
+	// Double SHA256 the prefix+hash, take the first four bytes as the checksum.
+	checksum := utils.DoubleSHA256(raw)[:4]
+
+	// Base58 encode the appended (prefix+hashed sec pub key) + checksum.
+	raw = append(raw, checksum...)
+
+	address := utils.EncodeBase58(raw)
+
+	return address
 }
