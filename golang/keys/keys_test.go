@@ -48,17 +48,6 @@ func TestGenKeyPair(t *testing.T) {
 	}
 }
 
-// TestGenerateAddress will test that we can generated a valid Bitcoin Address
-// for the testnet and the mainnet.
-// func TestGenerateAddress(t *testing.T) {
-// Generate a testnet address, use an existing public key as we know the
-// expected address.
-// x := 43651727216793576570341989570883305974491642311510342469928224726666590034225
-// y := 43651727216793576570341989570883305974491642311510342469928224726666590034225
-
-// expected address := mo24iC138ffpdWiFsH8y7dq6v5CDD1UbiT
-// }
-
 // TestUncompressedSec will test that we can generate an uncompressed sec
 // Public Key.
 func TestUncompressedSec(t *testing.T) {
@@ -199,5 +188,61 @@ func TestOddCompressedSec(t *testing.T) {
 				"Expected: %x, Received: %x\n", expectedCompressed,
 				secCompressed)
 		}
+	}
+}
+
+// TestGenTestnetAddress will test that we can generate a testnet compatible
+// address.
+func TestGenTestnetAddress(t *testing.T) {
+	// Use an existing pub key: (odd Y)
+	// x := 43651727216793576570341989570883305974491642311510342469928224726666590034225
+	// y := 109857391791750504773247734335453148952192151977881622854599464318335318347795
+	x, err := utils.ConvStrBigInt("43651727216793576570341989570883305974491642311510342469928224726666590034225")
+	if err != nil {
+		t.Fatalf("unable to convert x value to big int")
+	}
+
+	y, err := utils.ConvStrBigInt("109857391791750504773247734335453148952192151977881622854599464318335318347795")
+	if err != nil {
+		t.Fatalf("unable to convert y value to big int")
+	}
+
+	publicKey := &PublicKey{X: x, Y: y}
+	secCompressed := generateCompressedSec(publicKey)
+
+	address := GenerateTestnetAddress(secCompressed)
+
+	expected := "mo24iC138ffpdWiFsH8y7dq6v5CDD1UbiT"
+
+	if address != expected {
+		t.Fatalf("failed to generate correct address, expeted: %v, received: %v", expected, address)
+	}
+}
+
+// TestGenMainnetAddress will test that we can generate a mainnet compatible
+// address.
+func TestGenMainnetAddress(t *testing.T) {
+	// Use an existing pub key: (odd Y)
+	// x := 43651727216793576570341989570883305974491642311510342469928224726666590034225
+	// y := 109857391791750504773247734335453148952192151977881622854599464318335318347795
+	x, err := utils.ConvStrBigInt("43651727216793576570341989570883305974491642311510342469928224726666590034225")
+	if err != nil {
+		t.Fatalf("unable to convert x value to big int")
+	}
+
+	y, err := utils.ConvStrBigInt("109857391791750504773247734335453148952192151977881622854599464318335318347795")
+	if err != nil {
+		t.Fatalf("unable to convert y value to big int")
+	}
+
+	publicKey := &PublicKey{X: x, Y: y}
+	secCompressed := generateCompressedSec(publicKey)
+
+	address := GenerateMainnetAddress(secCompressed)
+
+	expected := "18W7R8v4KeEZrQEe9iAbHicn45bWNn2QBe"
+
+	if address != expected {
+		t.Fatalf("failed to generate correct address, expeted: %v, received: %v", expected, address)
 	}
 }
