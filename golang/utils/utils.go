@@ -250,3 +250,14 @@ func EncodeVarint(n int) ([]byte, error) {
 
 	return nil, errors.New("failed to encode varint")
 }
+
+// convHexStrToBigInt will convert the constants of the s, that are in
+// String representations of Hex to bigInts.
+func ConvHexStrToBigInt(sParam string) (*big.Int, error) {
+	sInt, success := new(big.Int).SetString(sParam, 16)
+	if !success {
+		return nil, errors.New("unable to convert s parameter to big Int")
+	}
+
+	return sInt, nil
+}

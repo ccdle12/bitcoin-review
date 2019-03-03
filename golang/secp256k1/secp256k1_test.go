@@ -114,11 +114,11 @@ func TestImplemenationScalarMultiply(t *testing.T) {
 			x, y, z = secp256k1.jacobianDouble(x, y, z)
 
 			if byte&0x80 == 0x80 {
-				x, y, z = secp256k1.jacobianAdd(Bx, By, Bz, x, y, z)
+				x, y, z = secp256k1.JacobianAdd(Bx, By, Bz, x, y, z)
 			}
 			// TODO: (ccdle12) need to look intowhy we need to shift the byte
 			// by 1.
-			// byte <<= 1
+			byte <<= 1
 		}
 	}
 
