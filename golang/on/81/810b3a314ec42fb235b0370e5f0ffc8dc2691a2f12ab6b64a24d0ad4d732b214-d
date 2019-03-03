@@ -1,0 +1,6 @@
+=== RUN   TestConvStrBigInt
+--- PASS: TestConvStrBigInt (0.00s)
+=== RUN   TestDecodeBase58
+--- PASS: TestDecodeBase58 (0.00s)
+PASS
+ok  	github.com/ccdle12/bitcoin-review/golang/utils	0.006s

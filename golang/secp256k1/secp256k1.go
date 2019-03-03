@@ -1,7 +1,7 @@
 package secp256k1
 
 import (
-	"errors"
+	"github.com/ccdle12/bitcoin-review/golang/utils"
 	"math/big"
 )
 
@@ -29,29 +29,18 @@ type Secp256k1 struct {
 // New is the constructor for the s Secp256k.
 // TODO: make this implement a Curve interface.
 func New() *Secp256k1 {
-	P, _ := convHexStrToBigInt(p)
-	A, _ := convHexStrToBigInt(a)
-	B, _ := convHexStrToBigInt(b)
-	Gx, _ := convHexStrToBigInt(gx)
-	Gy, _ := convHexStrToBigInt(gy)
-	N, _ := convHexStrToBigInt(n)
+	P, _ := utils.ConvHexStrToBigInt(p)
+	A, _ := utils.ConvHexStrToBigInt(a)
+	B, _ := utils.ConvHexStrToBigInt(b)
+	Gx, _ := utils.ConvHexStrToBigInt(gx)
+	Gy, _ := utils.ConvHexStrToBigInt(gy)
+	N, _ := utils.ConvHexStrToBigInt(n)
 
 	return &Secp256k1{P, A, B, Gx, Gy, N}
 }
 
-// convHexStrToBigInt will convert the constants of the s, that are in
-// String representations of Hex to bigInts.
-func convHexStrToBigInt(sParam string) (*big.Int, error) {
-	sInt, success := new(big.Int).SetString(sParam, 16)
-	if !success {
-		return nil, errors.New("unable to convert s parameter to big Int")
-	}
-
-	return sInt, nil
-}
-
 // TODO: EXPLAIN
-func (s *Secp256k1) jacobianAdd(x1, y1, z1, x2, y2, z2 *big.Int) (*big.Int, *big.Int, *big.Int) {
+func (s *Secp256k1) JacobianAdd(x1, y1, z1, x2, y2, z2 *big.Int) (*big.Int, *big.Int, *big.Int) {
 	// See http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#addition-add-2007-bl
 	z1z1 := new(big.Int).Mul(z1, z1)
 	z1z1.Mod(z1z1, s.P)
@@ -120,7 +109,7 @@ func (s *Secp256k1) jacobianAdd(x1, y1, z1, x2, y2, z2 *big.Int) (*big.Int, *big
 }
 
 // TODO: EXPLAIN
-func (s *Secp256k1) jacobianDouble(x, y, z *big.Int) (*big.Int, *big.Int, *big.Int) {
+func (s *Secp256k1) JacobianDouble(x, y, z *big.Int) (*big.Int, *big.Int, *big.Int) {
 	// See http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian-0.html#doubling-dbl-2009-l
 	a := new(big.Int).Mul(x, x) // X1^2
 	b := new(big.Int).Mul(y, y) // Y1^2
@@ -204,7 +193,7 @@ func (s *Secp256k1) ScalarMult(k []byte) (*big.Int, *big.Int, *big.Int) {
 			x, y, z = s.jacobianDouble(x, y, z)
 
 			if byte&0x80 == 0x80 {
-				x, y, z = s.jacobianAdd(Bx, By, Bz, x, y, z)
+				x, y, z = s.JacobianAdd(Bx, By, Bz, x, y, z)
 			}
 			// TODO: (ccdle12) need to look intowhy we need to shift the byte
 			// by 1.
@@ -213,4 +202,48 @@ func (s *Secp256k1) ScalarMult(k []byte) (*big.Int, *big.Int, *big.Int) {
 	}
 
 	return x, y, z
+}
+
+// GenericScalarMult is the open function to use scalar multiplication without assuming the use of Gx and Gy.
+func (s *Secp256k1) GenericScalarMult(Bx, By *big.Int, k []byte) (*big.Int, *big.Int, *big.Int) {
+	Bz := new(big.Int).SetInt64(1)
+	// x, y, z := new(big.Int), new(big.Int), new(big.Int)
+
+	x := Bx
+	y := By
+	z := Bz
+
+	for _, byte := range k {
+		for bitNum := 0; bitNum < 8; bitNum++ {
+			x, y, z = s.jacobianDouble(x, y, z)
+			if byte&0x80 == 0x80 {
+				x, y, z = s.JacobianAdd(Bx, By, Bz, x, y, z)
+			}
+			byte <<= 1
+		}
+	}
+
+	return x, y, z
+}
+
+// SimpleAdd will be an alternative to the jacobianAdd for adding different x,y co-orindates.
+func (s *Secp256k1) SimpleAdd(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int) {
+	// DO I need to mod everything?
+
+	// Slope is the delta between x1,y1 and x2,y2
+	s1 := new(big.Int).Sub(y1, y2)
+	s2 := new(big.Int).Sub(x1, x2)
+	slope := new(big.Int).Div(s1, s2)
+
+	// Calculate the new x point = x3 = slope^2 - x1 - x2
+	x3 := new(big.Int).Exp(slope, big.NewInt(2), nil)
+	x3.Sub(x3, x1)
+	x3.Sub(x3, x2)
+
+	// Calculate the new y point = y3 = slope * (x1 - x3) - y1
+	y3 := new(big.Int).Sub(x1, x3)
+	y3.Mul(slope, y3)
+	y3.Sub(y3, y1)
+
+	return x3, y3
 }

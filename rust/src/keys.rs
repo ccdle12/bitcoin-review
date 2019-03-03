@@ -28,7 +28,6 @@ pub fn generate_private_key() -> PrivateKey {
 
 // generate_public_key will generate a public key given the secret as a scalar.
 // pub fn generate_public_key(secret: &Int) -> PublicKey {
-//     
 // }
 
 #[cfg(test)]
@@ -79,6 +78,9 @@ mod tests {
 
         println!("{}", private_key.secret);
 
+        // TODO: (ccdle12) Apply the double and add algorithm for scalar multiplication.
+        // Create FieldElements and Points.
+    
         // TEST:
         // Get the byte size of the private key secret.
         // pub fn bit_length(&self) -> u32

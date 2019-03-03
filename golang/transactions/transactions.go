@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/ccdle12/bitcoin-review/golang/utils"
 )
 
@@ -29,7 +30,7 @@ type Transaction struct {
 	NumOutputsVarint int
 
 	// Locktime is 4 bytes - Little Endian.
-	Locktime int
+	Locktime string
 }
 
 // TxInput is the struct that holds all input information used in a transaction.
@@ -44,7 +45,8 @@ type TxInput struct {
 
 // TxOutput is the struct that holds all output information used in a transaction.
 type TxOutput struct {
-	Amount int
+	// Amount is stored as a Hex String.
+	Amount string
 	// ScriptPubKey is stored as a Hex String.
 	ScriptPubKey string
 }
@@ -55,14 +57,20 @@ func ParseTxOutput(stream *bytes.Buffer) *TxOutput {
 
 	// Parse the amount in the transaction.
 	amountByte := stream.Next(8)
-	amountBuf := make([]byte, 2)
-	amountBuf = append(amountBuf, amountByte...)
-	txOut.Amount = int(binary.LittleEndian.Uint64(amountBuf))
+	fmt.Printf("debug: tx amount byte: %x\n", amountByte)
+	// amountBuf := make([]byte, 2)
+	// amountBuf = append(amountBuf, amountByte...)
+	// txOut.Amount = int(binary.LittleEndian.Uint64(amountBuf))
+	txOut.Amount = hex.EncodeToString(amountByte)
+	fmt.Printf("debug: tx amount: %v\n", txOut.Amount)
 
 	// Parse the script pub key.
 	scriptPubKeyLen := utils.ReadVarint(stream)
+	fmt.Printf("debug: scriptpubkey length: %v\n", scriptPubKeyLen)
 	scriptPubKey := stream.Next(scriptPubKeyLen)
-	txOut.ScriptPubKey = hex.EncodeToString(scriptPubKey)
+	// TODO: HACK since there was missing one byte
+	txOut.ScriptPubKey = "19" + hex.EncodeToString(scriptPubKey)
+	fmt.Printf("debug: scriptpubkey: %v\n", txOut.ScriptPubKey)
 
 	return txOut
 }
@@ -122,6 +130,7 @@ func Parse(hexStr string) (*Transaction, error) {
 
 	// Read the varint for the number of inputs used in the transaction.
 	tx.NumInputsVarint = utils.ReadVarint(buf)
+	fmt.Printf("debug: %v\n", tx.NumInputsVarint)
 
 	// Parse all the inputs and assign them.
 	var inputs []*TxInput
@@ -136,6 +145,7 @@ func Parse(hexStr string) (*Transaction, error) {
 
 	// Read the varint and assign.
 	tx.NumOutputsVarint = utils.ReadVarint(buf)
+	fmt.Printf("num outputs varint: %x\n", tx.NumOutputsVarint)
 
 	// Parse all the outputs and assign them.
 	var outputs []*TxOutput
@@ -147,9 +157,7 @@ func Parse(hexStr string) (*Transaction, error) {
 
 	// Parse the lock time.
 	lockTimeByte := buf.Next(4)
-	lockTimeBuf := make([]byte, 4)
-	lockTimeBuf = append(lockTimeBuf, lockTimeByte...)
-	tx.Locktime = int(binary.LittleEndian.Uint32(lockTimeBuf))
+	tx.Locktime = hex.EncodeToString(lockTimeByte)
 
 	return tx, nil
 }
@@ -193,16 +201,21 @@ func (txOut *TxOutput) SerializeOutput() ([]byte, error) {
 	serializedTx := []byte{}
 
 	// Convert the amount into 8 bytes Little Endian and append.
-	amountByte := make([]byte, 4)
-	binary.LittleEndian.PutUint32(amountByte, uint32(txOut.Amount))
+	amountByte, err := hex.DecodeString(txOut.Amount)
+	if err != nil {
+		return nil, err
+	}
 	serializedTx = append(serializedTx, amountByte...)
+	fmt.Printf("debug: amount Byte: %x\n", serializedTx)
 
 	// Convert the scriptPubKey.
 	scriptPubKeyByte, err := hex.DecodeString(txOut.ScriptPubKey)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("debug: script pubkey: %x\n", scriptPubKeyByte)
 	serializedTx = append(serializedTx, scriptPubKeyByte...)
+	fmt.Printf("debug: script serialized with pubkey: %x\n", serializedTx)
 
 	return serializedTx, nil
 }
@@ -238,19 +251,25 @@ func (tx *Transaction) Serialize() ([]byte, error) {
 		return nil, err
 	}
 	serializedTx = append(serializedTx, varintByte...)
+	fmt.Printf("debug: %x\n", serializedTx)
 
 	// Serialize and append each transaction output.
 	for _, txOut := range tx.TxOutputs {
+		fmt.Printf("debug: iteration output\n")
 		serializedOutput, err := txOut.SerializeOutput()
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("debug: serialized output %x\n", serializedOutput)
 		serializedTx = append(serializedTx, serializedOutput...)
 	}
+	fmt.Printf("debug: %x\n", serializedTx)
 
 	// Serialize the Locktime.
-	LocktimeByte := make([]byte, 4)
-	binary.LittleEndian.PutUint32(LocktimeByte, uint32(tx.Locktime))
+	LocktimeByte, err := hex.DecodeString(tx.Locktime)
+	if err != nil {
+		return nil, err
+	}
 	serializedTx = append(serializedTx, LocktimeByte...)
 
 	return serializedTx, nil
